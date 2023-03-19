@@ -67,10 +67,7 @@ So, how will you solve this problem where we want to create a single Hive table 
 Q LOAD DATA LOCAL INPATH ‘Home/country/state/’
 OVERWRITE INTO TABLE address;
 The following statement failed to execute. What can be the cause?
-
 A **local inpath should cointain file name directory folder works for hdfs file**
-
-
 
 Q Is it possible to add 100 nodes when we already have 100 nodes in Hive? If yes, how?
 
@@ -93,7 +90,8 @@ Hive Practical questions:
 Hive Join operations
 
 Q Create a  table named CUSTOMERS(ID | NAME | AGE | ADDRESS   | SALARY)
-Create a Second  table ORDER(OID | DATE | CUSTOMER_ID | AMOUNT)
+Create a Second  table ORDER(OID | DATE | CUSTOMER_ID | AMOUNT
+)
 
 Now perform different joins operations on top of these tables
 (Inner JOIN, LEFT OUTER JOIN ,RIGHT OUTER JOIN ,FULL OUTER JOIN)
@@ -106,18 +104,139 @@ Download a data from the given location -
 https://archive.ics.uci.edu/ml/machine-learning-databases/00360/
 
 1. Create a hive table as per given schema in your dataset                             **OK**
-2. try to place a data into table location                                             **OK**                  
+
+create database hive_assignment;
+use hive_assignment;
+
+**create csv textfile file**
+CREATE TABLE air_quality_csv
+(
+date_data date,
+time_data time,
+CO_GT string,
+PT08_S1_CO bigint,
+NMHC_GT bigint,
+C6H6_GT double,
+PT08_S2_NMHC bigint,
+NOx_GT bigint,
+PT08_S3_NOx bigint,
+NO2_GT bigint,
+PT08_S4_NO2 bigint,
+PT08_S5_O3 bigint,
+T double,
+RH double,
+AH double
+)
+row format delimited
+fields terminated by ','
+stored as textfile
+SET TBLPROPERTIES ("skip.header.line.count" = "1");
+
+**create orc table schema**
+
+CREATE TABLE air_quality_orc
+(
+date_data date,
+time_data time,
+CO_GT string,
+PT08_S1_CO bigint,
+NMHC_GT bigint,
+C6H6_GT double,
+PT08_S2_NMHC bigint,
+NOx_GT bigint,
+PT08_S3_NOx bigint,
+NO2_GT bigint,
+PT08_S4_NO2 bigint,
+PT08_S5_O3 bigint,
+T double,
+RH double,
+AH double
+)
+row format delimited
+fields terminated by ','
+stored as orc
+SET TBLPROPERTIES ("skip.header.line.count" = "1");
+
+
+2. try to place a data into table location.                                            **OK**
+
+   load data local inpath 'file:///tmp/tanuj/AirQualityUCI.csv' into table air_quality_csv;
+
+**to load data from text file to orc table**
+
+   INSERT INTO TABLE air_quality_orc SELECT * FROM air_quality_csv;
+
 3. Perform a select operation .                                                        **OK**
-4. Fetch the result of the select operation in your local as a csv file .              **OK** 
+
+   SELECT * from air_quality_orc limit 10;
+
+
+4. Fetch the result of the select operation in your local as a csv file .              **OK**
+
+   SELECT AVG(CO_GT) FROM air_quality_orc;
+
+
 5. Perform group by operation .                                                        **OK**
-7. Perform filter operation at least 5 kinds of filter examples . 
+
+   SELECT SUM(CO_GT), date FROM air_quality_orc WHERE PT08_S1_CO > 1000 GROUP BY date LIMIT 100;
+
+
+7. Perform filter operation at least 5 kinds of filter examples .                      **OK**
+
+   a. distinct
+
+      SELECT DISTINCT NMHC_GT
+      FROM air_quality_orc;
+
+   b. AVG
+
+      SELECT AVG(CO_GT) FROM air_quality_orc;
+
+   c. WHERE
+
+      SELECT SUM(CO_GT), date_data FROM air_quality_orc WHERE PT08_S1_CO > 1000;
+
+   d. Between
+
+      SELECT SUM(CO_GT), date FROM air_quality_orc WHERE date_data BETWEEN '25-03-2004' AND '22-10-2004';
+
+   e. IS NOT NULL
+
+      SELECT SUM(CO_GT), date FROM air_quality_orc WHERE date_data IS NOT NULL LIMIT 100;
+
 8. show and example of regex operation
-9. alter table operation 
-10 . drop table operation
-12 . order by operation . 
-13 . where clause operations you have to perform . 
-14 . sorting operation you have to perform . 
-15 . distinct operation you have to perform . 
+9. alter table operation                                                               **OK**
+
+   ALTER TABLE air_quality_orc 
+   CHANGE COLUMN C6H6_GT C6H6_GT bigint;
+
+
+10 . drop table operation                                                              **OK**
+
+   DROP TABLE  air_quality_orc;
+
+
+12 . order by operation .                                                              **OK** 
+
+   SELECT SUM(CO_GT), date FROM air_quality_orc WHERE date_data IS NOT NULL LIMIT 100 ORDER BY CO_GT desc;
+
+
+13 . where clause operations you have to perform .                                     **OK** 
+
+   SELECT SUM(CO_GT), date_data FROM air_quality_orc WHERE PT08_S1_CO > 1000;
+
+
+14 . sorting operation you have to perform .                                           **OK**
+
+   SELECT SUM(CO_GT), date FROM air_quality_orc WHERE PT08_S1_CO > 1000 GROUP BY date  SORT BY CO_GT desc LIMIT 100;
+
+
+15 . distinct operation you have to perform .                                          **OK**
+
+   SELECT DISTINCT NMHC_GT
+      FROM air_quality_orc;
+
+      
 16 . like an operation you have to perform . 
 17 . union operation you have to perform . 
 18 . table view operation you have to perform . 
