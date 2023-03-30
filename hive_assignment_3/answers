@@ -2,21 +2,182 @@
 
 2. Store raw data into hdfs location
 
+  hadoop fs -mkdir /tmp/tanuj_hive_hdfs
+  hdfs dfs -put /home/cloudera/Hive-Class-main/sales_order_data.csv /tmp/tanuj_hive_hdfs/
+
+  to check:
+ 
+  hdfs dfs -ls /tmp/tanuj_hive_hdfs/
+  Found 1 items
+  -rw-r--r--   1 cloudera supergroup     360233 2023-03-29 04:59 /tmp/tanuj_hive_hdfs/sales_order_data.csv
+
 3. Create a internal hive table "sales_order_csv" which will store csv data sales_order_csv .. make sure to skip header row while creating table
+  create database
+  create database hive_assignment;
+
+  use hive_assignment;
+
+  hive table internal creation
+  create table sales_order_csv
+  (
+  ORDER_NUMBER int,
+  QUANTITY_ORDERED int,
+  PRICE_EACH float,
+  ORDERLINE_NUMBER int,
+  SALES float,
+  STATUS string,
+  QTR_ID int,
+  MONTH_ID int,
+  YEAR_ID int,
+  PRODUCT_LINE string,
+  MSRP int,
+  PRODUCTCODE string,
+  PHONE string,
+  CITY string,
+  STATE string,
+  POSTALCODE string,
+  COUNTRY string,
+  TERRITORY string,
+  CONTACT_LAST_NAME string,
+  CONTACT_FIRST_NAME string,
+  DEALSIZE string
+  )
+  row format delimited
+  fields terminated by ','
+  tblproperties("skip.header.line.count"="1");
 
 4. Load data from hdfs path into "sales_order_csv" 
+   load data inpath '/tmp/tanuj_hive_hdfs/' into table sales_order_csv;
 
+  select * from sales_order_csv
+  limit 10;
+  
 5. Create an internal hive table which will store data in ORC format "sales_order_orc"
+  Create  orc table
+  create table sales_order_orc
+  (
+  ORDER_NUMBER int,
+  QUANTITY_ORDERED int,
+  PRICE_EACH float,
+  ORDERLINE_NUMBER int,
+  SALES float,
+  STATUS string,
+  QTR_ID int,
+  MONTH_ID int,
+  YEAR_ID int,
+  PRODUCT_LINE string,
+  MSRP int,
+  PRODUCTCODE string,
+  PHONE string,
+  CITY string,
+  STATE string,
+  POSTALCODE string,
+  COUNTRY string,
+  TERRITORY string,
+  CONTACT_LAST_NAME string,
+  CONTACT_FIRST_NAME string,
+  DEALSIZE string
+  )
+  stored as orc;
 
 6. Load data from "sales_order_csv" into "sales_order_orc"
-
+  insert into table sales_order_orc select * from sales_order_csv
 
 Perform below menioned queries on "sales_order_orc" table :
 
+set hive.cli.print.header=true;
+to set configurable command to show header
+  
 a. Calculatye total sales per year
+  SELECT YEAR_ID, SUM(YEAR_ID) as total_sales_per_year
+  FROM sales_order_orc
+  GROUP BY YEAR_ID;
+
+  2003	2003000
+  2004	2695380
+  2005	958390
+  
 b. Find a product for which maximum orders were placed
+
+  SELECT PRODUCTCODE, SUM(QUANTITY_ORDERED) as total_order
+  FROM sales_order_orc
+  GROUP BY PRODUCTCODE
+  ORDER BY total_order DESC
+  LIMIT 1;
+
+  S18_3232	1774
+  
+  
 c. Calculate the total sales for each quarter
+
+  SELECT QTR_ID, SUM(SALES) as total_sales_per_qtr
+  FROM sales_order_orc
+  GROUP BY QTR_ID;
+
+  qtr_id	total_sales_per_qtr
+  1	2350817.726501465
+  2	2048120.3029174805
+  3	1758910.808959961
+  4	3874780.010925293
+  
+  
 d. In which quarter sales was minimum
+
+  SELECT SUM(SALES) as sales_order, QTR_ID
+  FROM sales_order_orc
+  GROUP BY QTR_ID 
+  ORDER BY SALES LIMIT 1;
+  
+  
 e. In which country sales was maximum and in which country sales was minimum
+
+  SELECT t1.COUNTRY as country_max_sales FROM sales_order_orc t1 WHERE t1.SALES in 
+  (SELECT MAX(t2.SALES) FROM sales_order_orc t2);
+
+  country_max_sales
+  USA
+
+
+  SELECT t1.COUNTRY as country_min_sales FROM sales_order_orc t1 WHERE t1.SALES in 
+  (SELECT MIN(t2.SALES) FROM sales_order_orc t2);
+
+  country_min_sales
+  France
+  
+  
 f. Calculate quartelry sales for each city
+
+  SELECT SUM(SALES) as qtr_sum_sale, QTR_ID, CITY FROM sales_order_orc
+  GROUP BY QTR_ID, CITY
+  ORDER BY CITY;
+
+  qtr_sum_sale	      qtr_id	  city
+  100595.5498046875	    4	      Aaarhus
+  44040.729736328125	  4	      Allentown
+  6166.7998046875	      2	      Allentown
+  71930.61041259766	    3	      Allentown
+  74192.66003417969	    4	      Barcelona
+  4219.2001953125	      2	      Barcelona
+  .......
+
 h. Find a month for each year in which maximum number of quantities were sold
+
+  SELECT MONTH_ID,YEAR_ID,QUANTITY_ORDERED FROM 
+  (SELECT DISTINCT MONTH_ID,YEAR_ID,QUANTITY_ORDERED,
+  dense_rank() over(partition by YEAR_ID ORDER BY QUANTITY_ORDERED desc) as rnk 
+  FROM sales_order_orc)a 
+  WHERE a.rnk=1
+
+  month_id	    year_id	      quantity_ordered
+  3	            2003	        50
+  10	          2003	        50
+  11	          2003	        50
+  6	            2003	        50
+  1	            2003	        50
+  4	            2003	        50
+  5	            2003	        50
+  2	            2003	        50
+  9	            2003	        50
+  11	          2004	        55
+  4	            2005	        97
+
