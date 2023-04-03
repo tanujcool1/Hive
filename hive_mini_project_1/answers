@@ -1,1 +1,301 @@
-Q1>
+AgentLogingReport.csv
+
+hdfs dfs -mkdir /tmp/tanuj_hive_hdfs/agen_performance/
+hdfs dfs -mkdir /tmp/tanuj_hive_hdfs/agent_login/
+hdfs dfs -put /home/cloudera/Hive-Class-main/AgentLogingReport.csv /tmp/tanuj_hive_hdfs/agent_login/
+
+hdfs dfs -put /home/cloudera/Hive-Class-main/AgentPerformance.csv /tmp/tanuj_hive_hdfs/agen_performance/
+
+
+create table agen_performance_csv
+(
+s_no int,
+date date,
+agent_name string,
+total_chat int,
+avg_response string,
+avg_resolution string,
+avg_rating float,
+feedback int
+)
+row format delimited
+fields terminated by ','
+tblproperties("skip.header.line.count"="1");
+
+load data inpath'/tmp/tanuj_hive_hdfs/agen_performance/' into table agen_performance_csv;
+
+
+
+create table agent_login_csv
+(
+s_no int,
+agent string,
+date date,
+login_time string,
+logout_time string,
+duration string
+)
+row format delimited
+fields terminated by ','
+tblproperties("skip.header.line.count"="1");
+
+load data inpath'/tmp/tanuj_hive_hdfs/agent_login/' into table agent_login_csv;
+
+
+
+3>
+SELECT DISTINCT(agent_name) FROM agen_performance_csv;
+
+Sudhanshu Kumar
+Suraj S Bilgi
+Swati 
+Tarun 
+Uday Mishra
+Vasanth P
+Vive
+
+4>
+SELECT agent_name, AVG(avg_rating) as Agent_avg_rating FROM agen_performance_csv GROUP BY agent_name;
+
+agent_name	_c1
+Abhishek 	0.0
+Aditya 	0.0
+Aditya Shinde	1.8003333409627278
+Aditya_iot 	2.3453333377838135
+Amersh 	0.0
+Ameya Jain	2.21966667175293
+Anirudh 	0.6449999968210857
+Ankit Sharma	0.0
+Ankitjha 	0.26666666666666666
+
+5>
+SELECT agent, COUNT(distinct date) as total_days_worked FROM agent_login_csv GROUP BY agent;
+
+Aditya Shinde	0
+Aditya_iot	0
+Amersh		0
+Ameya Jain	0
+Ankitjha	
+
+6>
+SELECT agent_name, SUM(total_chat) as total_query FROM agen_performance_csv GROUP BY agent_name;
+
+Abhishek 	0
+Aditya 		0
+Aditya Shinde	277
+Aditya_iot 	231
+Amersh 		0
+Ameya Jain	322
+Anirudh 	81
+Ankit Sharma	0
+
+
+7>
+SELECT agent_name, SUM(feedback) as total_query FROM agen_performance_csv GROUP BY agent_name;
+
+agent_name	total_query
+Abhishek 	0
+Aditya 		0
+Aditya Shinde	153
+Aditya_iot 	131
+Amersh 		0
+Ameya Jain	228
+Anirudh 	39
+Ankit Sharma	0
+
+
+8>
+SELECT t.agent_name, t.Agent_avg_rating FROM
+(SELECT agent_name, AVG(avg_rating) as Agent_avg_rating FROM agen_performance_csv GROUP BY agent_name)t WHERE Agent_avg_rating BETWEEN 3.5 AND 4;
+
+t.agent_name		t.agent_avg_rating
+Boktiar Ahmed Bappy	3.567999982833862
+Ishawant Kumar		3.543333347638448
+Khushboo Priya		3.703666663169861
+Manjunatha A		3.5946666876475017
+
+9>
+SELECT t.agent_name, t.Agent_avg_rating FROM
+(SELECT agent_name, AVG(avg_rating) as Agent_avg_rating FROM agen_performance_csv GROUP BY agent_name)t WHERE Agent_avg_rating < 3.5;
+
+t.agent_name	t.agent_avg_rating
+Abhishek 	0.0
+Aditya 		0.0
+Aditya Shinde	1.8003333409627278
+Aditya_iot 	2.3453333377838135
+Amersh 		0.0
+Ameya Jain	2.21966667175293
+Anirudh 	0.6449999968210857
+Ankit Sharma	0.0
+Ankitjha 	0.26666666666666666
+
+10>
+SELECT t.agent_name, t.Agent_avg_rating FROM
+(SELECT agent_name, AVG(avg_rating) as Agent_avg_rating FROM agen_performance_csv GROUP BY agent_name)t WHERE Agent_avg_rating > 4.5;
+
+zero result but to change the query 
+
+SELECT agent_name, AVG(avg_rating) as Agent_avg_rating FROM agen_performance_csv WHERE avg_rating > 4.5 GROUP BY agent_name;
+
+agent_name	agent_avg_rating
+Aditya Shinde	4.7671429089137485
+Aditya_iot 	4.726666688919067
+Ameya Jain	4.67125004529953
+Anirudh 	5.0
+Ankitjha 	5.0
+
+11>
+SELECT agent_name, COUNT(feedback)FROM agen_performance_csv WHERE feedback > 4.5 GROUP BY agent_name;
+
+agent_name	_c1
+Aditya Shinde	12
+Aditya_iot 	14
+Ameya Jain	14
+Anirudh 	3
+Aravind 	13
+Ashad Nasim	1
+
+
+12>
+SELECT s.agent_name, AVG(col1[0]*360+col1[1]*60+substr(col1[2],1,2))/3600 FROM
+(SELECT agent_name,split(avg_response,':') as col1 from agen_performance_csv)s GROUP BY s.agent_name;
+
+s.agent_name	_c1
+Abhishek 	0.0
+Aditya 	0.0
+Aditya Shinde	0.00825925925925926
+Aditya_iot 	0.009435185185185185
+Amersh 	0.0
+Ameya Jain	0.00587037037037037
+Anirudh 	0.006046296296296296
+Ankit Sharma	0.0
+Ankitjha 	0.0012314814814814816
+
+13>
+SELECT s.agent_name, AVG(col1[0]*360+col1[1]*60+substr(col1[2],1,2))/3600 FROM
+(SELECT agent_name,split(avg_resolution,':') as col1 from agen_performance_csv)s GROUP BY s.agent_name;
+
+s.agent_name	_c1
+Abhishek 	0.0
+Aditya 	0.0
+Aditya Shinde	0.17239814814814813
+Aditya_iot 	0.16369444444444442
+Amersh 	0.0
+Ameya Jain	0.09125
+Anirudh 	0.05151851851851852
+Ankit Sharma	0.0
+
+14>
+
+SELECT agent_name, SUM(total_chat), feedback FROM agen_performance_csv WHERE feedback > 0 GROUP BY agent_name, feedback;
+
+agent_name	_c1	feedback
+Aditya Shinde	8	7
+Aditya Shinde	17	8
+Aditya Shinde	67	9
+Aditya Shinde	18	11
+Aditya Shinde	27	14
+Aditya Shinde	49	15
+Aditya Shinde	34	19
+Aditya Shinde	57	28
+
+15>
+
+SELECT s.agent, SUM(col1[0]*3600+col1[1]*60+col1[2])/3600 timeinhour, s.weekly FROM 
+(SELECT agent, split(duration,':') as col1, weekofyear(date) as weekly FROM agent_login_csv)s GROUP BY s.agent, s.weekly limit 10;
+
+s.agent			timeinhour		s.weekly
+Aditya Shinde		0.03611111111111111	NULL
+Aditya_iot		15.731111111111112	NULL
+Amersh			3.063888888888889	NULL
+Ameya Jain		42.07555555555555	NULL
+Ankitjha		2.2669444444444444	NULL
+Anurag Tiwari		2.778888888888889	NULL
+Aravind			24.299166666666668	NULL
+Ayushi Mishra		38.12166666666667	NULL
+Bharath			48.07666666666667	NULL
+Boktiar Ahmed Bappy	40.26861111111111	NULL
+
+16>
+
+INNER JOIN
+
+SELECT a.agent, a.date, a.duration, b.total_chat, b.feedback FROM hive_assignment.agent_login_csv a
+JOIN
+hive_assignment.agen_performance_csv b ON
+a.agent = b.agent_name
+LIMIT 10;
+
+a.agent		a.date	a.duration	b.total_chat	b.feedback
+Prerna Singh	NULL	01:37:40	11		9
+Prerna Singh	NULL	03:16:37	11		9
+Prerna Singh	NULL	02:12:27	11		9
+Prerna Singh	NULL	00:03:11	11		9
+Prerna Singh	NULL	07:47:29	11		9
+Prerna Singh	NULL	00:02:00	11		9
+Prerna Singh	NULL	00:07:29	11		9
+Prerna Singh	NULL	00:08:30	11		9
+Prerna Singh	NULL	00:01:56	11		9
+Prerna Singh	NULL	05:56:38	11		9
+
+LEFT JOIN 
+
+SELECT a.agent, a.date, a.duration, b.total_chat, b.feedback FROM hive_assignment.agent_login_csv a
+LEFT JOIN
+hive_assignment.agen_performance_csv b ON
+a.agent = b.agent_name
+LIMIT 10;
+
+a.agent			a.date	a.duration	b.total_chat	b.feedback
+Shivananda Sonwane	NULL	02:04:10	4		1
+Shivananda Sonwane	NULL	02:04:10	14		9
+Shivananda Sonwane	NULL	02:04:10	5		4
+Shivananda Sonwane	NULL	02:04:10	26		18
+Shivananda Sonwane	NULL	02:04:10	24		14
+Shivananda Sonwane	NULL	02:04:10	13		8
+Shivananda Sonwane	NULL	02:04:10	8		5
+Shivananda Sonwane	NULL	02:04:10	20		13
+Shivananda Sonwane	NULL	02:04:10	16		9
+Shivananda Sonwane	NULL	02:04:10	7		6
+
+RIGHT JOIN	
+
+SELECT a.agent, a.date, a.duration, b.total_chat, b.feedback FROM hive_assignment.agent_login_csv a
+RIGHT JOIN
+hive_assignment.agen_performance_csv b ON
+a.agent = b.agent_name
+LIMIT 10;
+
+a.agent		a.date	a.duration	b.total_chat	b.feedback
+Prerna Singh	NULL	01:37:40	11		9
+Prerna Singh	NULL	03:16:37	11		9
+Prerna Singh	NULL	02:12:27	11		9
+Prerna Singh	NULL	00:03:11	11		9
+Prerna Singh	NULL	07:47:29	11		9
+Prerna Singh	NULL	00:02:00	11		9
+Prerna Singh	NULL	00:07:29	11		9
+Prerna Singh	NULL	00:08:30	11		9
+Prerna Singh	NULL	00:01:56	11		9
+Prerna Singh	NULL	05:56:38	11		9
+
+17>
+first set properties
+SET hive.exec.dynamic.partition=true;
+SET hive.exec.dynamic.partition.mode=nonstrict;
+
+
+CREATE TABLE agent_login_partition
+(
+sr_no int,
+Date date,
+login string,
+logout string,
+duration string
+)
+partitioned by (agent string)
+CLUSTERED BY(Date) sorted by (Date) INTO 4 BUCKETS
+row format delimited
+fields terminated by',';
+
+INSERT into TABLE agent_login_partition(agent)
+SELECT sr_no, Date, login,logout,duration,agent FROM agent_login_csv;
